@@ -1,0 +1,1899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Table By Yoco Recipe Loader</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --yoco-bg: #121212;
+      --yoco-surface: #1e1e1e;
+      --yoco-surface-light: #2a2a2a;
+      --yoco-primary: #00A3FF;
+      --yoco-primary-hover: #008bdf;
+      --yoco-text-primary: #FFFFFF;
+      --yoco-text-secondary: #b3b3b3;
+      --yoco-border: #333333;
+      --yoco-green: #27ae60;
+      --yoco-orange: #f39c12;
+      --yoco-red: #eb5757;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: var(--yoco-bg);
+      color: var(--yoco-text-primary);
+      padding: 20px;
+    }
+    
+    .main-header {
+        max-width: 1800px;
+        margin: 0 auto 20px auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .main-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        background: linear-gradient(90deg, #3B82F6, #FFFFFF);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 15px;
+    }
+
+    .container {
+        max-width: 1800px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 20px;
+        align-items: start;
+    }
+    
+    .panel {
+        background-color: var(--yoco-surface);
+        border: 1px solid var(--yoco-border);
+        border-radius: 16px;
+        padding: 25px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-shrink: 0;
+    }
+
+    .panel-header h2 {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: var(--yoco-primary);
+    }
+
+    /* --- Left Panel: Import & Ingredients --- */
+    .left-panel {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        gap: 20px;
+        height: calc(100vh - 100px);
+        position: sticky;
+        top: 20px;
+    }
+
+    .import-section {
+        padding: 20px;
+        background-color: var(--yoco-surface-light);
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .import-section .tooltip-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 15px;
+    }
+
+    .import-section label {
+        margin-bottom: 0;
+        font-weight: 500;
+        color: var(--yoco-text-secondary);
+    }
+
+    input[type="file"] {
+        display: none;
+    }
+
+    .file-upload-btn {
+        background-color: var(--yoco-primary);
+        color: var(--yoco-text-primary);
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background-color: 0.2s;
+    }
+
+    .file-upload-btn:hover {
+        background-color: var(--yoco-primary-hover);
+    }
+
+    #fileName {
+        margin-top: 10px;
+        font-size: 14px;
+        color: var(--yoco-green);
+    }
+
+    .library-section {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; /* Restored for neat container look */
+    }
+
+    .tabs {
+        display: flex;
+        border-bottom: 1px solid var(--yoco-border);
+        margin-bottom: 15px;
+        flex-shrink: 0;
+        overflow-x: auto;
+    }
+
+    .tab-button {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: none;
+        background-color: transparent;
+        color: var(--yoco-text-secondary);
+        font-weight: 500;
+        position: relative;
+        transition: color 0.2s;
+        white-space: nowrap;
+    }
+
+    .tab-button.active {
+        color: var(--yoco-primary);
+    }
+    
+    .tab-button.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background-color: var(--yoco-primary);
+    }
+    
+    .tab-content-container {
+      position: relative;
+      flex-grow: 1;
+    }
+
+    #tabContents {
+        flex-grow: 1;
+        position: relative;
+        min-height: 0; /* Prevents flexbox overflow issues */
+    }
+
+    .tab-content {
+        display: none;
+        overflow-y: auto;
+        padding-right: 10px;
+        /* Fill the parent #tabContents container */
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+    }
+    
+    .tab-content.active {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .search-bar {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        border: 1px solid var(--yoco-border);
+        background-color: var(--yoco-bg);
+        color: var(--yoco-text-primary);
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    .ingredient-list {
+        list-style: none;
+    }
+
+    .ingredient-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        background-color: var(--yoco-surface-light);
+        cursor: pointer;
+        transition: background-color 0.2s, transform 0.2s;
+    }
+    
+    .ingredient-item:hover {
+        background-color: #3c3c3c;
+        transform: translateX(5px);
+    }
+
+    .ingredient-item span {
+        font-size: 14px;
+    }
+    .ingredient-item .name {
+        font-weight: 500;
+    }
+    .ingredient-item .uom {
+        color: var(--yoco-text-secondary);
+        margin-left: 10px;
+    }
+    .ingredient-item .cost {
+        font-weight: 600;
+        color: var(--yoco-green);
+    }
+
+    /* --- Right Panels --- */
+    .right-column {
+        display: grid;
+        grid-template-rows: auto auto;
+        gap: 20px;
+    }
+
+    .right-panel-group .panel {
+        display: none;
+    }
+    .right-panel-group .panel.active {
+        display: flex;
+    }
+    
+    .recipe-builder {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .master-product-form {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 15px;
+        padding: 20px;
+        background-color: var(--yoco-surface-light);
+        border-radius: 12px;
+        align-items: end;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group label {
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--yoco-text-secondary);
+    }
+
+    .form-group input, .form-group select {
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--yoco-border);
+        background-color: var(--yoco-bg);
+        color: var(--yoco-text-primary);
+        font-size: 16px;
+        font-family: 'Poppins', sans-serif;
+    }
+    
+    .form-group input:read-only {
+        background-color: var(--yoco-surface-light);
+        color: var(--yoco-text-secondary);
+        border-color: transparent;
+        padding-left: 0;
+        cursor: default;
+    }
+
+
+    /* Styles for clearable input */
+    .input-with-clear {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    .input-with-clear input {
+        width: 100%;
+        padding-right: 30px; /* Make space for the X */
+    }
+    .clear-btn-input {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: var(--yoco-text-secondary);
+        font-size: 20px;
+        font-weight: bold;
+        display: none; /* Hide by default */
+        line-height: 1;
+        transition: color 0.2s;
+    }
+    .clear-btn-input:hover {
+        color: var(--yoco-text-primary);
+    }
+
+
+    .recipe-details {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .recipe-table-container {
+        overflow-y: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 14px;
+        text-align: left;
+        border-bottom: 1px solid var(--yoco-border);
+    }
+
+    th {
+        background: #2a2a2a;
+        font-weight: 600;
+        color: var(--yoco-text-primary);
+        text-transform: uppercase;
+        font-size: 12px;
+        letter-spacing: 0.8px;
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+    
+    td input[type="number"], td input[type="text"] {
+        width: 100%;
+        min-width: 80px;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid var(--yoco-border);
+        background-color: var(--yoco-bg);
+        color: var(--yoco-text-primary);
+        text-align: right;
+    }
+    td input[type="text"] {
+        text-align: left;
+    }
+    td input[type="number"] {
+      -moz-appearance: textfield; /* Firefox */
+    }
+    /* Hide spin buttons on number inputs for Chrome, Safari, Edge, Opera */
+    td input[type="number"]::-webkit-outer-spin-button,
+    td input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    
+    .remove-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--yoco-red);
+        font-weight: bold;
+        font-size: 18px;
+    }
+
+    td input.input-error {
+        border-color: var(--yoco-red);
+    }
+
+    .recipe-summary {
+        margin-top: 20px;
+        padding: 20px;
+        background-color: var(--yoco-surface-light);
+        border-radius: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .cost-details {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .recipe-summary .total-cost, .recipe-summary .selling-price, .recipe-summary .gp-percentage {
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+
+    .recipe-summary .total-cost span {
+        color: var(--yoco-green);
+    }
+
+    .recipe-summary .selling-price span {
+        color: var(--yoco-primary);
+    }
+    
+    .recipe-summary .gp-percentage span {
+        transition: color 0.3s;
+    }
+    
+    .action-btn {
+        color: var(--yoco-text-primary);
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+    .action-btn:disabled {
+        background-color: #555 !important;
+        color: var(--yoco-text-secondary) !important;
+        cursor: not-allowed;
+        border-color: #555 !important;
+    }
+
+    .save-btn, .update-yield-btn { background-color: var(--yoco-primary); }
+    .save-btn:hover:not(:disabled), .update-yield-btn:hover:not(:disabled) { background-color: var(--yoco-primary-hover); }
+    
+    .export-btn { 
+        background-color: transparent;
+        border: 2px solid var(--yoco-primary);
+        color: var(--yoco-primary);
+    }
+    .export-btn:hover:not(:disabled) { 
+        background-color: var(--yoco-primary);
+        color: var(--yoco-text-primary);
+    }
+
+    .clear-btn {
+        background: transparent;
+        color: var(--yoco-red);
+        border: 2px solid var(--yoco-red);
+        padding: 10px;
+        width: 44px;
+        height: 44px;
+    }
+    .clear-btn:hover:not(:disabled) {
+        background: var(--yoco-red);
+        color: var(--yoco-text-primary);
+    }
+    .clear-btn svg {
+        fill: var(--yoco-red);
+        transition: fill 0.2s;
+    }
+    .clear-btn:hover:not(:disabled) svg {
+        fill: var(--yoco-text-primary);
+    }
+
+
+    /* Saved Recipes Panel */
+    .saved-recipes-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    #savedRecipesContainer {
+        overflow-x: auto;
+    }
+    .saved-recipes-panel .actions-col {
+        text-align: right;
+    }
+    .saved-recipes-panel .actions-col button {
+        background: none;
+        border: 1px solid var(--yoco-border);
+        color: var(--yoco-text-secondary);
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-left: 8px;
+        transition: all 0.2s;
+        white-space: nowrap;
+    }
+    .saved-recipes-panel .actions-col button:hover:not(:disabled) {
+        background-color: var(--yoco-border);
+        color: var(--yoco-text-primary);
+    }
+    .saved-recipes-footer {
+        margin-top: auto;
+        padding-top: 15px;
+        border-top: 1px solid var(--yoco-border);
+        display: flex;
+        justify-content: flex-end;
+    }
+    .gp-low { color: var(--yoco-red); font-weight: 600; }
+    .gp-medium { color: var(--yoco-orange); font-weight: 600; }
+    .gp-high { color: var(--yoco-green); font-weight: 600; }
+
+    /* Tooltip Styles */
+    .tooltip-container {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .tooltip-trigger {
+        display: none;
+        cursor: help;
+        color: var(--yoco-text-secondary);
+        border: 1px solid var(--yoco-text-secondary);
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 12px;
+        line-height: 16px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+    .tooltip-container:hover .tooltip-trigger {
+        display: inline-block;
+    }
+    .tooltip-text {
+      visibility: hidden;
+      width: 280px;
+      background-color: #2a2a2a;
+      color: var(--yoco-text-primary);
+      text-align: left;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--yoco-border);
+      position: absolute;
+      z-index: 1000;
+      top: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      font-weight: 400;
+      font-size: 13px;
+      line-height: 1.6;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      pointer-events: none;
+    }
+    .tooltip-text::after {
+      content: "";
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: transparent transparent #2a2a2a transparent;
+    }
+    .tooltip-trigger:hover + .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+    
+    /* General purpose tooltip using data-tooltip attribute */
+    .tooltip {
+        position: relative;
+    }
+    .tooltip::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      z-index: 1000;
+      
+      /* Positioning */
+      left: 50%;
+      bottom: 120%; /* Give it some space */
+      transform: translateX(-50%);
+
+      /* Appearance */
+      background-color: #2a2a2a;
+      color: var(--yoco-text-primary);
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--yoco-border);
+      font-weight: 400;
+      font-size: 13px;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+
+      /* Visibility */
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+      pointer-events: none;
+    }
+    .tooltip:hover::after {
+      opacity: 1;
+      visibility: visible;
+    }
+
+
+    /* Scrollbar styles */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--yoco-surface);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--yoco-border);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+    .btn-icon {
+        padding: 0.75rem;
+    }
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    }
+    .btn-secondary {
+      background-color: var(--yoco-surface);
+      color: var(--yoco-text-primary);
+      border: 1px solid var(--yoco-border);
+    }
+    
+    #yieldFieldsContainer .action-btn {
+        padding: 10px;
+        width: 44px;
+        height: 44px;
+        background-color: var(--yoco-surface-light);
+    }
+    #yieldFieldsContainer .action-btn:hover:not(:disabled) {
+        background-color: var(--yoco-primary);
+    }
+
+
+  </style>
+</head>
+<body>
+
+<header class="main-header">
+    <div class="flex items-center gap-3">
+        <a href="https://drive.google.com/file/d/1S6otC-OQOKkcr0Rb0HeyhqZ-QcfZ1HRj/view?usp=drive_link" target="_blank" class="btn btn-secondary btn-icon tooltip" style="padding: 0.75rem;" data-tooltip="View How To Guide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        </a>
+        <div class="tooltip-container">
+            <h1>Table By Yoco Recipe Loader</h1>
+            <span class="tooltip-trigger">?</span>
+            <div class="tooltip-text">An application to build and manage product recipes from an imported list.</div>
+        </div>
+    </div>
+    <div class="header-actions">
+        <button class="action-btn export-btn" id="exportAllBtnHeader" title="Export all saved recipes to an Excel file and clear all data.">Export All Recipes</button>
+        <button class="action-btn clear-btn" id="clearAllBtn" title="Clear all imported products and saved recipes from the application.">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path d="M3 6v18h18v-18h-18zm5 14c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm5 0c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm5 0c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm4-18h-20v-2h6v-1.5c0-.827.673-1.5 1.5-1.5h5c.825 0 1.5.671 1.5 1.5v1.5h6v2z"/></svg>
+        </button>
+    </div>
+</header>
+
+<div class="container">
+    <!-- Left Panel: Import and Library -->
+    <div class="left-panel">
+        <div class="panel import-section">
+            <div class="tooltip-container">
+                <label for="excelFile">Import Product Sheet</label>
+                <span class="tooltip-trigger">?</span>
+                <div class="tooltip-text">The product excel sheet from the Table by Yoco Product Loader must be loaded.</div>
+            </div>
+            <input type="file" id="excelFile" accept=".xlsx, .xls, .csv">
+            <label for="excelFile" class="file-upload-btn" title="Import an Excel file (.xlsx, .xls, .csv) with your product list.">Choose File</label>
+            <p id="fileName"></p>
+        </div>
+        <div class="panel library-section">
+             <div class="panel-header">
+                <div class="tooltip-container">
+                    <h2>Ingredient Library</h2>
+                    <span class="tooltip-trigger">?</span>
+                    <div class="tooltip-text">Browse and select ingredients from your imported product list, sorted by category.</div>
+                </div>
+            </div>
+            <div class="tabs" id="libraryTabs">
+                <!-- Tabs will be generated here -->
+            </div>
+            <div id="tabContents" class="tab-content-container">
+                <!-- Tab contents will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="right-column">
+        <!-- Right-side Tab Navigation -->
+        <div class="tabs" id="rightPanelTabs">
+            <button class="tab-button active" data-tab="recipeBuilderPanel">Recipe Builder</button>
+            <button class="tab-button" data-tab="yieldEditorPanel">Yield Editor</button>
+        </div>
+
+        <!-- Right-side Tab Content -->
+        <div class="right-panel-group">
+            <!-- Top Right Panel: Recipe Builder -->
+            <div id="recipeBuilderPanel" class="panel recipe-builder active">
+                <div class="panel-header">
+                    <div class="tooltip-container">
+                        <h2>Recipe Builder</h2>
+                        <span class="tooltip-trigger">?</span>
+                        <div class="tooltip-text">Construct a new recipe for a selected master product.</div>
+                    </div>
+                </div>
+
+                <div class="master-product-form">
+                    <div class="form-group">
+                        <label for="menuCategoryFilter">Filter by Menu Category</label>
+                        <select id="menuCategoryFilter"></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="masterProductInput">Search for Master Product</label>
+                        <div class="input-with-clear">
+                            <input type="text" id="masterProductInput" list="masterProductList" placeholder="-- Import products first --" title="Select the main product you are building a recipe for.">
+                            <span class="clear-btn-input" id="masterProductClearBtn">&times;</span>
+                        </div>
+                        <datalist id="masterProductList"></datalist>
+                    </div>
+                    <!-- Yield Fields for Manufactured Products -->
+                    <div id="yieldFieldsContainer" style="display: none; grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; margin-top: 10px; align-items: end;">
+                        <div class="form-group">
+                            <label for="yieldQtyInput">Yield Quantity</label>
+                            <input type="number" id="yieldQtyInput" placeholder="e.g., 1.5" min="0.001" step="0.001" title="How much does this recipe produce?" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="yieldUomInput">Yield UOM</label>
+                            <input type="text" id="yieldUomInput" placeholder="e.g., kg, L, each" title="What is the unit for the yield quantity?" readonly>
+                        </div>
+                         <button id="editYieldBtn" class="action-btn btn-icon" title="Edit Yield">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="edit-icon"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="save-icon" style="display: none;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="recipe-details">
+                    <div class="recipe-table-container">
+                        <table id="recipeTable">
+                            <thead>
+                                <tr>
+                                    <th>PLU</th>
+                                    <th>Product Name</th>
+                                    <th>UOM</th>
+                                    <th>Cost/UOM</th>
+                                    <th>Quantity</th>
+                                    <th>Total Cost</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Recipe items will be added here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="recipe-summary">
+                    <div class="cost-details">
+                        <div class="total-cost">
+                            Total Recipe Cost: <span id="totalCost">R0.00</span>
+                        </div>
+                        <div class="selling-price" id="sellingPriceContainer" style="display: none;">
+                            Master Selling Price: <span id="masterSellingPrice">R0.00</span>
+                        </div>
+                        <div class="gp-percentage" id="gpPercentageContainer" style="display: none;">
+                            Gross Profit %: <span id="gpPercentage">0.00%</span>
+                        </div>
+                    </div>
+                    <button class="action-btn save-btn" id="saveRecipeBtn" title="Save the current recipe in the builder to the 'Saved Recipes' list below.">Save Recipe</button>
+                </div>
+            </div>
+
+            <!-- Yield Editor Panel -->
+            <div id="yieldEditorPanel" class="panel">
+                <div class="panel-header">
+                     <div class="tooltip-container">
+                        <h2>Yield Editor</h2>
+                        <span class="tooltip-trigger">?</span>
+                        <div class="tooltip-text">Edit the yield for saved manufactured products. Updating the yield will automatically recalculate its cost and update it everywhere it's used as an ingredient.</div>
+                    </div>
+                </div>
+                <input type="text" id="yieldEditorSearch" class="search-bar" placeholder="Search manufactured products...">
+                <div id="yieldEditorContainer" class="recipe-table-container">
+                    <!-- Yield editor table will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Right Panel: Saved Recipes -->
+        <div class="panel saved-recipes-panel">
+             <div class="panel-header">
+                <div class="tooltip-container">
+                    <h2>Saved Recipes</h2>
+                    <span class="tooltip-trigger">?</span>
+                    <div class="tooltip-text">View, edit, copy, or delete your saved recipes.</div>
+                </div>
+            </div>
+            <input type="text" id="savedRecipeSearch" class="search-bar" placeholder="Search saved recipes...">
+            <div id="savedRecipesContainer">
+                <!-- Saved recipes table will be generated here -->
+            </div>
+            <div class="saved-recipes-footer">
+                <button class="action-btn export-btn" id="exportAllBtnFooter" title="Export all saved recipes to an Excel file and clear all data.">Export All Recipes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- State Management ---
+    let importedProducts = [];
+    let recipeItems = [];
+    let selectedMasterProduct = null;
+    let savedRecipes = [];
+    let isEditingRecipe = false;
+
+    // --- DOM Elements ---
+    const excelFileInput = document.getElementById('excelFile');
+    const fileNameDisplay = document.getElementById('fileName');
+    const libraryTabs = document.getElementById('libraryTabs');
+    const tabContents = document.getElementById('tabContents');
+    const recipeTableBody = document.querySelector('#recipeTable tbody');
+    const totalCostDisplay = document.getElementById('totalCost');
+    const saveRecipeBtn = document.getElementById('saveRecipeBtn');
+    const exportAllBtnHeader = document.getElementById('exportAllBtnHeader');
+    const exportAllBtnFooter = document.getElementById('exportAllBtnFooter');
+    const clearAllBtn = document.getElementById('clearAllBtn');
+    const menuCategoryFilter = document.getElementById('menuCategoryFilter');
+    const masterProductInput = document.getElementById('masterProductInput');
+    const masterProductList = document.getElementById('masterProductList');
+    const masterProductClearBtn = document.getElementById('masterProductClearBtn');
+    const savedRecipesContainer = document.getElementById('savedRecipesContainer');
+    const savedRecipeSearch = document.getElementById('savedRecipeSearch');
+    const sellingPriceContainer = document.getElementById('sellingPriceContainer');
+    const masterSellingPriceDisplay = document.getElementById('masterSellingPrice');
+    const gpPercentageContainer = document.getElementById('gpPercentageContainer');
+    const gpPercentageDisplay = document.getElementById('gpPercentage');
+    const yieldFieldsContainer = document.getElementById('yieldFieldsContainer');
+    const yieldQtyInput = document.getElementById('yieldQtyInput');
+    const yieldUomInput = document.getElementById('yieldUomInput');
+    const rightPanelTabs = document.getElementById('rightPanelTabs');
+    const yieldEditorContainer = document.getElementById('yieldEditorContainer');
+    const yieldEditorSearch = document.getElementById('yieldEditorSearch');
+    const editYieldBtn = document.getElementById('editYieldBtn');
+    
+    // --- Event Listeners ---
+    window.addEventListener('DOMContentLoaded', loadState);
+    excelFileInput.addEventListener('change', handleFileUpload);
+    saveRecipeBtn.addEventListener('click', saveCurrentRecipe);
+    exportAllBtnHeader.addEventListener('click', exportAllRecipes);
+    exportAllBtnFooter.addEventListener('click', exportAllRecipes);
+    clearAllBtn.addEventListener('click', () => clearAllData(true));
+    menuCategoryFilter.addEventListener('change', () => {
+        clearMasterProductInput();
+        populateMasterProductDatalist();
+    });
+    masterProductInput.addEventListener('input', handleMasterProductInput);
+    masterProductClearBtn.addEventListener('click', clearMasterProductInput);
+    savedRecipeSearch.addEventListener('keyup', handleSavedRecipeSearch);
+    yieldEditorSearch.addEventListener('keyup', () => renderYieldEditor());
+    rightPanelTabs.addEventListener('click', (e) => {
+        if (e.target.closest('.tab-button')) {
+            switchRightTab(e.target.closest('.tab-button').dataset.tab);
+        }
+    });
+    editYieldBtn.addEventListener('click', toggleYieldEditing);
+
+
+    // --- Data Persistence ---
+    function saveState() {
+        const appState = {
+            importedProducts: importedProducts,
+            savedRecipes: savedRecipes
+        };
+        localStorage.setItem('recipeBuilderState', JSON.stringify(appState));
+    }
+
+    function loadState() {
+        const savedState = localStorage.getItem('recipeBuilderState');
+        if (savedState) {
+            const appState = JSON.parse(savedState);
+            importedProducts = appState.importedProducts || [];
+            savedRecipes = appState.savedRecipes || [];
+
+            if (importedProducts.length > 0) {
+                fileNameDisplay.textContent = 'Loaded from previous session.';
+                setupLibraryTabs();
+                populateCategoryFilter();
+                populateMasterProductDatalist();
+            }
+            if (savedRecipes.length > 0) {
+                renderSavedRecipes();
+                renderYieldEditor();
+            }
+        } else {
+            setupLibraryTabs(); // Setup tabs even if no data
+        }
+    }
+
+    // --- File Import Logic ---
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        if (importedProducts.length > 0) {
+            if (!confirm("Importing a new file will clear all current data, including saved recipes. Are you sure you want to continue?")) {
+                excelFileInput.value = ""; // Reset file input
+                return;
+            }
+        }
+        clearAllData(false); // Clear existing data without asking again
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                
+                // --- HEADER VALIDATION ---
+                const requiredHeaders = ['Product PLU', 'Product Name & Variant', 'Selling UOM', 'Cost Price', 'Selling Price', 'Inventory Category', 'Menu Category'];
+                const headerRow = XLSX.utils.sheet_to_json(worksheet, { header: 1 })[0];
+                const missingHeaders = requiredHeaders.filter(header => !headerRow.includes(header));
+
+                if (missingHeaders.length > 0) {
+                    alert(`Import failed. The Excel file is missing the following required columns:\n\n- ${missingHeaders.join('\n- ')}`);
+                    excelFileInput.value = "";
+                    return;
+                }
+                // --- END VALIDATION ---
+
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                fileNameDisplay.textContent = `Loaded: ${file.name}`;
+                
+                importedProducts = jsonData.map(row => {
+                    const yieldQtyValue = parseFloat(row['Manufactured Yield'] || row['Yield Quantity']) || 1;
+                    return {
+                        plu: row['Product PLU'],
+                        name: row['Product Name & Variant'],
+                        uom: row['Selling UOM'],
+                        originalUom: row['Selling UOM'],
+                        cost: parseFloat(row['Cost Price']) || 0,
+                        sellingPrice: parseFloat(row['Selling Price']) || 0,
+                        category: row['Inventory Category'] || '', // Default to empty string, not 'Uncategorized'
+                        menuCategory: row['Menu Category'] || 'Uncategorized',
+                        yieldQty: yieldQtyValue,
+                        originalYieldQty: yieldQtyValue,
+                        yieldUom: row['Yield UOM'] || 'each'
+                    }
+                });
+                
+                setupLibraryTabs();
+                populateCategoryFilter();
+                populateMasterProductDatalist();
+                saveState();
+            } catch (error) {
+                console.error("Error processing file:", error);
+                alert("There was an error reading the Excel file. Please ensure it's a valid format.");
+                excelFileInput.value = "";
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // --- UI Rendering ---
+    function switchRightTab(tabId) {
+        rightPanelTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.right-panel-group .panel').forEach(panel => panel.classList.remove('active'));
+        
+        const activeButton = rightPanelTabs.querySelector(`.tab-button[data-tab='${tabId}']`);
+        const activePanel = document.getElementById(tabId);
+
+        if(activeButton) activeButton.classList.add('active');
+        if(activePanel) activePanel.classList.add('active');
+    }
+
+    function populateCategoryFilter() {
+        menuCategoryFilter.innerHTML = '';
+        const savedMasterProductPLUs = new Set(savedRecipes.map(r => r.master.plu));
+        const eligibleProducts = importedProducts.filter(product =>
+            !product.name.toLowerCase().startsWith('(raw)') &&
+            !savedMasterProductPLUs.has(product.plu)
+        );
+        
+        const manProducts = eligibleProducts.filter(p => p.name.toLowerCase().startsWith('(man)'));
+        const otherProducts = eligibleProducts.filter(p => !p.name.toLowerCase().startsWith('(man)'));
+
+        // Add default "All" option
+        const allOption = document.createElement('option');
+        allOption.value = 'all';
+        allOption.textContent = 'All Categories';
+        menuCategoryFilter.appendChild(allOption);
+        
+        // Add "Manufactured" option if there are any
+        if (manProducts.length > 0) {
+            const manOption = document.createElement('option');
+            manOption.value = 'manufactured';
+            manOption.textContent = 'Manufactured Products';
+            menuCategoryFilter.appendChild(manOption);
+        }
+
+        // Add other menu categories
+        const uniqueMenuCategories = [...new Set(otherProducts.map(p => p.menuCategory || 'Uncategorized'))].sort();
+        uniqueMenuCategories.forEach(cat => {
+            const catOption = document.createElement('option');
+            catOption.value = cat;
+            catOption.textContent = cat;
+            menuCategoryFilter.appendChild(catOption);
+        });
+    }
+
+    function populateMasterProductDatalist() {
+        masterProductList.innerHTML = '';
+        const savedMasterProductPLUs = new Set(savedRecipes.map(r => r.master.plu));
+        
+        // When editing, the selected product isn't in savedRecipes, but it IS the `selectedMasterProduct`
+        const eligibleProducts = importedProducts.filter(product =>
+            !product.name.toLowerCase().startsWith('(raw)') &&
+            (!savedMasterProductPLUs.has(product.plu) || (isEditingRecipe && selectedMasterProduct && product.plu === selectedMasterProduct.plu))
+        );
+
+        const selectedCategory = menuCategoryFilter.value;
+        let productsToList = [];
+
+        if (selectedCategory === 'all') {
+            productsToList = eligibleProducts;
+        } else if (selectedCategory === 'manufactured') {
+            productsToList = eligibleProducts.filter(p => p.name.toLowerCase().startsWith('(man)'));
+        } else {
+            productsToList = eligibleProducts.filter(p => (p.menuCategory || 'Uncategorized') === selectedCategory);
+        }
+
+        if (productsToList.length === 0) {
+            masterProductInput.placeholder = "-- No products in this category --";
+        } else {
+            masterProductInput.placeholder = "-- Start typing to search --";
+        }
+
+        productsToList.sort((a,b) => a.name.localeCompare(b.name)).forEach(product => {
+            const option = document.createElement('option');
+            option.value = `${product.name} (${product.plu})`;
+            option.dataset.plu = product.plu;
+            masterProductList.appendChild(option);
+        });
+    }
+
+    function setupLibraryTabs() {
+        libraryTabs.innerHTML = '';
+        tabContents.innerHTML = '';
+
+        const currentRecipePlus = new Set(recipeItems.map(item => item.plu));
+
+        const availableIngredients = importedProducts.filter(p => {
+            const cleanCategory = (p.category || '').trim().toLowerCase();
+            const isIngredientCategory = cleanCategory.includes('raw material') || cleanCategory.includes('manufactured');
+            const notInCurrentRecipe = !currentRecipePlus.has(p.plu);
+            return isIngredientCategory && notInCurrentRecipe;
+        });
+
+
+        if (availableIngredients.length === 0) {
+            if (importedProducts.length > 0) {
+                libraryTabs.innerHTML = '<p style="padding: 10px; color: var(--yoco-text-secondary);">No valid ingredients found.</p>';
+            }
+            return; // Exit if no ingredients to show
+        }
+
+        // --- Create "All" Tab ---
+        const allTabId = 'tab-all';
+        const allTabButton = document.createElement('button');
+        allTabButton.className = 'tab-button';
+        allTabButton.dataset.tab = allTabId;
+        allTabButton.textContent = 'All';
+        libraryTabs.appendChild(allTabButton);
+
+        const allTabContent = document.createElement('div');
+        allTabContent.id = allTabId;
+        allTabContent.className = 'tab-content';
+
+        const allSearchInput = document.createElement('input');
+        allSearchInput.type = 'text';
+        allSearchInput.className = 'search-bar';
+        allSearchInput.placeholder = 'Search all ingredients...';
+        allSearchInput.onkeyup = (e) => filterIngredients(e.target.value, allTabId);
+
+        const allList = document.createElement('ul');
+        allList.className = 'ingredient-list';
+        
+        // Sort all ingredients alphabetically by name for the "All" tab
+        availableIngredients.sort((a, b) => a.name.localeCompare(b.name)).forEach(product => {
+            const item = document.createElement('li');
+            item.className = 'ingredient-item';
+            item.title = "Click to add this item to the current recipe.";
+            item.innerHTML = `
+                <div>
+                    <span class="name">${product.name}</span>
+                    <span class="uom">(${product.uom})</span>
+                </div>
+                <span class="cost">R${product.cost.toFixed(2)}</span>
+            `;
+            item.onclick = () => addProductToRecipe(product);
+            allList.appendChild(item);
+        });
+
+        allTabContent.appendChild(allSearchInput);
+        allTabContent.appendChild(allList);
+        tabContents.appendChild(allTabContent);
+
+
+        // --- Create Category Tabs ---
+        const allCategories = [...new Set(availableIngredients.map(p => p.category))];
+        const categories = allCategories.filter(c => c && c.trim() !== '' && c.trim() !== 'Uncategorized').sort();
+
+        categories.forEach(category => {
+            const tabId = `tab-${category.replace(/[^a-zA-Z0-9]/g, '-')}`; // Sanitize ID for safety
+            const tabButton = document.createElement('button');
+            tabButton.className = 'tab-button';
+            tabButton.dataset.tab = tabId;
+            tabButton.textContent = category;
+            libraryTabs.appendChild(tabButton);
+            
+            const tabContent = document.createElement('div');
+            tabContent.id = tabId;
+            tabContent.className = 'tab-content';
+            
+            const searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.className = 'search-bar';
+            searchInput.placeholder = `Search in ${category}...`;
+            searchInput.onkeyup = (e) => filterIngredients(e.target.value, tabId);
+            
+            const list = document.createElement('ul');
+            list.className = 'ingredient-list';
+
+            const categoryProducts = availableIngredients.filter(p => p.category === category);
+            // Sort products within each category as well
+            categoryProducts.sort((a, b) => a.name.localeCompare(b.name)).forEach(product => {
+                const item = document.createElement('li');
+                item.className = 'ingredient-item';
+                item.title = "Click to add this item to the current recipe.";
+                item.innerHTML = `
+                    <div>
+                        <span class="name">${product.name}</span>
+                        <span class="uom">(${product.uom})</span>
+                    </div>
+                    <span class="cost">R${product.cost.toFixed(2)}</span>
+                `;
+                item.onclick = () => addProductToRecipe(product);
+                list.appendChild(item);
+            });
+            
+            tabContent.appendChild(searchInput);
+            tabContent.appendChild(list);
+            tabContents.appendChild(tabContent);
+        });
+
+        // --- Finalize Tabs ---
+        libraryTabs.querySelectorAll('.tab-button').forEach(btn => {
+            btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+        });
+
+        // Activate the 'All' tab by default
+        switchTab(allTabId);
+    }
+
+
+    function switchTab(tabId) {
+        libraryTabs.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        tabContents.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        const activeButton = libraryTabs.querySelector(`.tab-button[data-tab='${tabId}']`);
+        const activeContent = document.getElementById(tabId);
+
+        if(activeButton) activeButton.classList.add('active');
+        if(activeContent) activeContent.classList.add('active');
+    }
+
+    function filterIngredients(searchTerm, tabId) {
+        const listItems = document.querySelectorAll(`#${tabId} .ingredient-item`);
+        const lowerCaseSearchTerm = searchTerm.toLowerCase();
+        listItems.forEach(item => {
+            const name = item.querySelector('.name').textContent.toLowerCase();
+            item.style.display = name.includes(lowerCaseSearchTerm) ? 'flex' : 'none';
+        });
+    }
+
+    // --- Recipe Logic ---
+    function handleMasterProductInput(event) {
+        const inputValue = event.target.value;
+        const option = Array.from(document.querySelectorAll('#masterProductList option')).find(opt => opt.value === inputValue);
+        selectedMasterProduct = option ? importedProducts.find(p => p.plu.toString() === option.dataset.plu) : null;
+        
+        if (selectedMasterProduct && selectedMasterProduct.name.toLowerCase().startsWith('(man)')) {
+            yieldFieldsContainer.style.display = 'grid';
+            yieldQtyInput.value = selectedMasterProduct.originalYieldQty || 1;
+            yieldUomInput.value = selectedMasterProduct.originalUom;
+            setYieldFieldsReadOnly(true);
+        } else {
+            yieldFieldsContainer.style.display = 'none';
+        }
+
+        updateSummary();
+        masterProductClearBtn.style.display = inputValue.length > 0 ? 'block' : 'none';
+    }
+
+    function clearMasterProductInput() {
+        masterProductInput.value = '';
+        selectedMasterProduct = null;
+        updateSummary();
+        masterProductClearBtn.style.display = 'none';
+        yieldFieldsContainer.style.display = 'none';
+        masterProductInput.focus();
+    }
+    
+    function addProductToRecipe(product) {
+        // Check if the product is a (MAN) item that doesn't have a saved recipe yet
+        if (product.name.toLowerCase().startsWith('(man)')) {
+            const isManRecipeSaved = savedRecipes.some(r => r.master.plu.toString() === product.plu.toString());
+            if (!isManRecipeSaved) {
+                alert(`A recipe for "${product.name}" must be built and saved first before it can be used as an ingredient.`);
+                return; // Stop the function
+            }
+        }
+
+        if (recipeItems.some(item => item.plu === product.plu)) {
+            alert(`${product.name} is already in the recipe.`);
+            return;
+        }
+        recipeItems.push({ ...product, quantity: '' });
+        renderRecipeTable();
+        updateSummary();
+        setupLibraryTabs(); // Refresh the library to hide the added item
+    }
+    
+    function updateRecipeQuantity(plu, inputElement) {
+        const quantityValue = inputElement.value;
+        const item = recipeItems.find(i => i.plu.toString() === plu.toString());
+        
+        if (item) {
+            // Update the data model
+            item.quantity = quantityValue; // Keep as string here, parse when calculating
+            
+            // Update the specific row's total cost in the DOM
+            const row = inputElement.closest('tr');
+            const totalCostCell = row.cells[5]; // 6th cell
+            const itemTotalCost = item.cost * (parseFloat(quantityValue) || 0);
+            totalCostCell.textContent = `R${itemTotalCost.toFixed(2)}`;
+
+            // If the new quantity is valid, remove the error class
+            if (parseFloat(quantityValue) > 0) {
+                inputElement.classList.remove('input-error');
+            }
+        }
+        
+        // Only update the summary, don't re-render the whole table
+        updateSummary();
+    }
+
+    function removeRecipeItem(plu) {
+        recipeItems = recipeItems.filter(item => item.plu.toString() !== plu.toString());
+        renderRecipeTable();
+        updateSummary();
+        setupLibraryTabs(); // Refresh the library to show the removed item again
+    }
+
+    function renderRecipeTable() {
+        recipeTableBody.innerHTML = '';
+        recipeItems.forEach(item => {
+            const row = document.createElement('tr');
+            row.dataset.plu = item.plu;
+            const itemTotalCost = item.cost * (parseFloat(item.quantity) || 0);
+            row.innerHTML = `
+                <td>${item.plu}</td>
+                <td>${item.name}</td>
+                <td>${item.uom}</td>
+                <td>R${item.cost.toFixed(2)}</td>
+                <td><input type="number" value="${item.quantity}" placeholder="0.000" min="0" step="0.001" onchange="updateRecipeQuantity('${item.plu}', this)"></td>
+                <td>R${itemTotalCost.toFixed(2)}</td>
+                <td><button class="remove-btn" title="Remove this ingredient from the current recipe." onclick="removeRecipeItem('${item.plu}')">&times;</button></td>
+            `;
+            recipeTableBody.appendChild(row);
+        });
+    }
+
+    function updateSummary() {
+        // 1. Calculate and display total cost
+        const total = recipeItems.reduce((sum, item) => sum + (item.cost * (parseFloat(item.quantity) || 0)), 0);
+        totalCostDisplay.textContent = `R${total.toFixed(2)}`;
+
+        // 2. Display selling price and GP% if a master product is selected
+        if (selectedMasterProduct && typeof selectedMasterProduct.sellingPrice !== 'undefined') {
+            const sellingPrice = selectedMasterProduct.sellingPrice;
+            masterSellingPriceDisplay.textContent = `R${sellingPrice.toFixed(2)}`;
+            sellingPriceContainer.style.display = 'block';
+
+            let gp = 0;
+            if (sellingPrice > 0) {
+                gp = ((sellingPrice - total) / sellingPrice) * 100;
+            } else {
+                 gp = -100; // Or handle as you see fit if selling price is zero
+            }
+            
+            gpPercentageDisplay.textContent = `${gp.toFixed(2)}%`;
+            
+            // Color code the GP%
+            if (gp < 30) {
+                gpPercentageDisplay.style.color = 'var(--yoco-red)';
+            } else if (gp < 60) {
+                gpPercentageDisplay.style.color = 'var(--yoco-orange)';
+            } else {
+                gpPercentageDisplay.style.color = 'var(--yoco-green)';
+            }
+            
+            gpPercentageContainer.style.display = 'block';
+
+        } else {
+            // Hide if no master product is selected
+            sellingPriceContainer.style.display = 'none';
+            gpPercentageContainer.style.display = 'none';
+        }
+    }
+
+
+    // --- Saved Recipes Logic ---
+    function saveCurrentRecipe() {
+        if (!selectedMasterProduct) {
+            alert('Please select a valid Master Product before saving.');
+            return;
+        }
+        if (recipeItems.length === 0) {
+            alert('Cannot save an empty recipe.');
+            return;
+        }
+        
+        // --- NEW VALIDATION LOGIC ---
+        // 1. Clear previous errors
+        document.querySelectorAll('#recipeTable input[type="number"]').forEach(input => input.classList.remove('input-error'));
+
+        // 2. Find all items with invalid quantities
+        const invalidItems = recipeItems.filter(item => !item.quantity || parseFloat(item.quantity) <= 0);
+
+        // 3. If there are invalid items, highlight them and alert
+        if (invalidItems.length > 0) {
+            invalidItems.forEach(item => {
+                const row = recipeTableBody.querySelector(`tr[data-plu='${item.plu}']`);
+                if (row) {
+                    const input = row.querySelector('input[type="number"]');
+                    if (input) {
+                        input.classList.add('input-error');
+                    }
+                }
+            });
+            alert('Please provide a quantity greater than 0 for all highlighted ingredients.');
+            return; // Stop the save process
+        }
+        // --- END NEW LOGIC ---
+
+        const isManProduct = selectedMasterProduct.name.toLowerCase().startsWith('(man)');
+        const yieldQty = parseFloat(yieldQtyInput.value);
+        
+        if (isManProduct && (!yieldQty || yieldQty <= 0)) {
+            alert('Manufactured products must have a Yield Quantity greater than 0.');
+            return;
+        }
+
+        // Remember the category before saving
+        const lastSelectedCategory = menuCategoryFilter.value;
+
+        const totalCost = recipeItems.reduce((sum, item) => sum + (item.cost * (parseFloat(item.quantity) || 0)), 0);
+        
+        const masterDataForRecipe = {
+            ...selectedMasterProduct
+        };
+
+        // If the saved recipe is for a (MAN) product, update its cost in the main product list
+        if (isManProduct) {
+            const yieldUom = yieldUomInput.value.trim() || selectedMasterProduct.uom;
+            const costPerYieldUnit = totalCost / yieldQty;
+            
+            // Add yield info to the recipe master data
+            masterDataForRecipe.yieldQty = yieldQty;
+            masterDataForRecipe.yieldUom = yieldUom;
+            
+            // Update the master product list for future use as an ingredient
+            const productIndex = importedProducts.findIndex(p => p.plu.toString() === selectedMasterProduct.plu.toString());
+            if (productIndex > -1) {
+                importedProducts[productIndex].cost = costPerYieldUnit;
+                importedProducts[productIndex].uom = yieldUom;
+            }
+        }
+
+        const existingIndex = savedRecipes.findIndex(r => r.master.plu === selectedMasterProduct.plu);
+        const recipeToSave = { master: masterDataForRecipe, items: [...recipeItems] };
+        
+        if (existingIndex > -1) {
+            // No need to confirm when updating, as it's an explicit action from "Edit"
+            savedRecipes[existingIndex] = recipeToSave;
+        } else {
+            savedRecipes.push(recipeToSave);
+        }
+        
+        clearCurrentRecipeBuilder();
+        renderSavedRecipes();
+        renderYieldEditor();
+        saveState();
+        
+        // Repopulate master data
+        populateCategoryFilter(); 
+        setupLibraryTabs(); // Re-render library to reflect new costs/UOMs
+        savedRecipeSearch.value = '';
+
+        // Check if the last used category is now empty
+        const savedMasterProductPLUs = new Set(savedRecipes.map(r => r.master.plu));
+        const eligibleProducts = importedProducts.filter(product =>
+            !product.name.toLowerCase().startsWith('(raw)') &&
+            !savedMasterProductPLUs.has(product.plu)
+        );
+
+        let productsLeftInCategory = [];
+        if (lastSelectedCategory === 'all') {
+            productsLeftInCategory = eligibleProducts;
+        } else if (lastSelectedCategory === 'manufactured') {
+            productsLeftInCategory = eligibleProducts.filter(p => p.name.toLowerCase().startsWith('(man)'));
+        } else {
+            productsLeftInCategory = eligibleProducts.filter(p => (p.menuCategory || 'Uncategorized') === lastSelectedCategory);
+        }
+
+        if (productsLeftInCategory.length > 0 && lastSelectedCategory !== 'all') {
+            // If there are still products, keep the filter on that category
+            menuCategoryFilter.value = lastSelectedCategory;
+        } else {
+            // If the category is empty or was 'all', reset to 'all'
+            menuCategoryFilter.value = 'all';
+        }
+        
+        // Finally, populate the master product list based on the (potentially sticky) category
+        populateMasterProductDatalist(); 
+    }
+
+    function clearCurrentRecipeBuilder() {
+        clearMasterProductInput();
+        recipeItems = [];
+        yieldQtyInput.value = '';
+        yieldUomInput.value = '';
+        yieldFieldsContainer.style.display = 'none';
+        renderRecipeTable();
+        updateSummary();
+        
+        // Reset from edit mode if active
+        isEditingRecipe = false; 
+        saveRecipeBtn.textContent = 'Save Recipe'; 
+        saveRecipeBtn.title = "Save the current recipe in the builder to the 'Saved Recipes' list below.";
+    }
+
+    function renderSavedRecipes(recipesToRender = savedRecipes) {
+        savedRecipesContainer.innerHTML = '';
+        if (recipesToRender.length === 0) {
+            savedRecipesContainer.innerHTML = `<p style="color: var(--yoco-text-secondary); text-align: center; padding-top: 20px;">No saved recipes found.</p>`;
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Recipe Name</th>
+                    <th>Items</th>
+                    <th>Yield</th>
+                    <th>Total Cost</th>
+                    <th>Cost/Yield UOM</th>
+                    <th>GP%</th>
+                    <th class="actions-col">Actions</th>
+                </tr>
+            </thead>
+        `;
+        const tbody = document.createElement('tbody');
+
+        recipesToRender.sort((a,b) => a.master.name.localeCompare(b.master.name)).forEach(recipe => {
+            const totalCost = recipe.items.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
+            const sellingPrice = recipe.master.sellingPrice || 0;
+            let gp = 0;
+            let effectiveCost = totalCost;
+
+            // For (MAN) products, the GP should be based on the cost per SINGLE selling unit, not the whole batch cost
+            if (recipe.master.name.toLowerCase().startsWith('(man)')) {
+                const productInfo = importedProducts.find(p => p.plu === recipe.master.plu);
+                if (productInfo) {
+                    effectiveCost = productInfo.cost; 
+                }
+            }
+
+            if (sellingPrice > 0) {
+                gp = ((sellingPrice - effectiveCost) / sellingPrice) * 100;
+            } else {
+                gp = -100;
+            }
+
+            let gpColorClass = '';
+            if (gp < 30) {
+                gpColorClass = 'gp-low';
+            } else if (gp < 60) {
+                gpColorClass = 'gp-medium';
+            } else {
+                gpColorClass = 'gp-high';
+            }
+
+            const yieldDisplay = (recipe.master.yieldQty && recipe.master.yieldUom) ? `${recipe.master.yieldQty} ${recipe.master.yieldUom}` : 'N/A';
+            const costPerYieldUnit = (recipe.master.yieldQty > 0) ? (totalCost / recipe.master.yieldQty) : 0;
+
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td title="${recipe.master.name}">${recipe.master.name}</td>
+                <td>${recipe.items.length}</td>
+                <td>${yieldDisplay}</td>
+                <td>R${totalCost.toFixed(2)}</td>
+                <td>R${costPerYieldUnit.toFixed(2)}</td>
+                <td class="${gpColorClass}">${gp.toFixed(2)}%</td>
+                <td class="actions-col">
+                    <button onclick="copyRecipe('${recipe.master.plu}')" title="Copy ingredients from this recipe to the builder. You must select a new master product first.">Copy</button>
+                    <button onclick="loadRecipe('${recipe.master.plu}')" title="Load this recipe into the builder for editing. This will remove it from the saved list until it's saved again.">Edit</button>
+                    <button onclick="deleteRecipe('${recipe.master.plu}')" title="Permanently delete this saved recipe.">Delete</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+        savedRecipesContainer.appendChild(table);
+    }
+
+    function handleSavedRecipeSearch(event) {
+        const searchTerm = event.target.value.toLowerCase();
+        const filteredRecipes = savedRecipes.filter(recipe =>
+            recipe.master.name.toLowerCase().includes(searchTerm)
+        );
+        renderSavedRecipes(filteredRecipes);
+    }
+
+    function copyRecipe(masterPlu) {
+        if (document.getElementById('recipeBuilderPanel').classList.contains('active') === false) {
+             alert("Please switch to the 'Recipe Builder' tab first.");
+             return;
+        }
+        if (!selectedMasterProduct) {
+            alert("Please select a new Master Product in the Recipe Builder before copying ingredients.");
+            return;
+        }
+
+        const recipeToCopy = savedRecipes.find(r => r.master.plu.toString() === masterPlu.toString());
+        if (!recipeToCopy) return;
+
+        if (recipeItems.length > 0) {
+            if (!confirm("This will replace the current ingredients in the Recipe Builder. Are you sure you want to continue?")) {
+                return;
+            }
+        }
+
+        // Create a deep copy of the items to avoid reference issues
+        recipeItems = recipeToCopy.items.map(item => ({ ...item }));
+        renderRecipeTable();
+        updateSummary();
+    }
+
+    function loadRecipe(masterPlu) {
+        const recipeToLoad = savedRecipes.find(r => r.master.plu.toString() === masterPlu.toString());
+        if (!recipeToLoad) return;
+        
+        if (document.getElementById('recipeBuilderPanel').classList.contains('active') === false) {
+             if(!confirm("This will switch you to the 'Recipe Builder' tab and discard any unsaved work there. Continue?")) {
+                return;
+             }
+             switchRightTab('recipeBuilderPanel');
+        }
+
+        if (recipeItems.length > 0) {
+            if(!confirm("Loading this recipe will discard the current unsaved recipe in the builder. Continue?")) {
+                return;
+            }
+        }
+        
+        // Temporarily store the recipe data because we're about to delete it from the saved list
+        const recipeData = JSON.parse(JSON.stringify(recipeToLoad));
+
+        // Remove the recipe from the main list. This also refreshes the available master products.
+        deleteRecipe(masterPlu, false);
+        
+        // Clear the current builder UI
+        clearCurrentRecipeBuilder();
+
+        // Set the category filter to match the product being loaded
+        const productCategory = recipeData.master.name.toLowerCase().startsWith('(man)') ? 'manufactured' : recipeData.master.menuCategory;
+        menuCategoryFilter.value = productCategory;
+
+        // Repopulate the datalist for the correct category. Now the product to be edited will be in the list.
+        populateMasterProductDatalist();
+
+        // Set the builder's state with the loaded recipe data
+        masterProductInput.value = `${recipeData.master.name} (${recipeData.master.plu})`;
+        handleMasterProductInput({target: masterProductInput}); // This will now correctly find the product and set selectedMasterProduct
+        recipeItems = [...recipeData.items];
+        
+        // The handleMasterProductInput function already sets the yield from the original imported data.
+        // No need to override it with the saved recipe's yield data here.
+        setYieldFieldsReadOnly(true);
+
+        // Update UI
+        renderRecipeTable();
+        updateSummary();
+        setupLibraryTabs(); // Refresh library to hide items now in the builder
+        
+        isEditingRecipe = true;
+        saveRecipeBtn.textContent = 'Update Recipe';
+        saveRecipeBtn.title = 'Update the recipe for this product in the saved list.';
+    }
+
+
+    function deleteRecipe(masterPlu, askConfirm = true) {
+        const recipeToDelete = savedRecipes.find(r => r.master.plu.toString() === masterPlu.toString());
+        if (!recipeToDelete) return;
+
+        if (askConfirm) {
+            if (!confirm(`Are you sure you want to delete the recipe for "${recipeToDelete.master.name}"?`)) {
+                return;
+            }
+        }
+        savedRecipes = savedRecipes.filter(r => r.master.plu.toString() !== masterPlu.toString());
+        renderSavedRecipes();
+        renderYieldEditor();
+        saveState();
+
+        // After deleting, refresh the category filter and product list
+        populateCategoryFilter();
+        populateMasterProductDatalist();
+    }
+    
+    // --- Yield Editor & Builder Logic ---
+    function toggleYieldEditing(e) {
+        e.preventDefault();
+        const isReadOnly = yieldQtyInput.readOnly;
+        setYieldFieldsReadOnly(!isReadOnly);
+    }
+
+    function setYieldFieldsReadOnly(isReadOnly) {
+        yieldQtyInput.readOnly = isReadOnly;
+        yieldUomInput.readOnly = isReadOnly;
+
+        const editIcon = editYieldBtn.querySelector('.edit-icon');
+        const saveIcon = editYieldBtn.querySelector('.save-icon');
+
+        if (isReadOnly) {
+            editYieldBtn.title = "Edit Yield";
+            editIcon.style.display = 'block';
+            saveIcon.style.display = 'none';
+        } else {
+            editYieldBtn.title = "Save Yield";
+            editIcon.style.display = 'none';
+            saveIcon.style.display = 'block';
+            yieldQtyInput.focus();
+        }
+    }
+
+
+    function renderYieldEditor() {
+        const searchTerm = yieldEditorSearch.value.toLowerCase();
+        const manRecipes = savedRecipes.filter(r => 
+            r.master.name.toLowerCase().startsWith('(man)') &&
+            r.master.name.toLowerCase().includes(searchTerm)
+        );
+
+        if (manRecipes.length === 0) {
+            yieldEditorContainer.innerHTML = `<p style="color: var(--yoco-text-secondary); text-align: center; padding-top: 20px;">No saved manufactured products found.</p>`;
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Current Yield</th>
+                    <th>New Yield Qty</th>
+                    <th>New Yield UOM</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+        `;
+        const tbody = document.createElement('tbody');
+
+        manRecipes.sort((a,b) => a.master.name.localeCompare(b.master.name)).forEach(recipe => {
+            const plu = recipe.master.plu;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${recipe.master.name}</td>
+                <td>${recipe.master.yieldQty || 'N/A'} ${recipe.master.yieldUom || ''}</td>
+                <td><input type="number" id="yield-qty-${plu}" value="${recipe.master.yieldQty || ''}" step="0.001" min="0.001"></td>
+                <td><input type="text" id="yield-uom-${plu}" value="${recipe.master.yieldUom || ''}"></td>
+                <td><button class="action-btn update-yield-btn" onclick="updateYield('${plu}')">Update</button></td>
+            `;
+            tbody.appendChild(row);
+        });
+        table.appendChild(tbody);
+        yieldEditorContainer.innerHTML = ''; // Clear previous content
+        yieldEditorContainer.appendChild(table);
+    }
+
+    function updateYield(masterPlu) {
+        const recipeIndex = savedRecipes.findIndex(r => r.master.plu.toString() === masterPlu.toString());
+        if (recipeIndex === -1) return;
+
+        const newYieldQtyInput = document.getElementById(`yield-qty-${masterPlu}`);
+        const newYieldUomInput = document.getElementById(`yield-uom-${masterPlu}`);
+        
+        const newYieldQty = parseFloat(newYieldQtyInput.value);
+        const newYieldUom = newYieldUomInput.value.trim();
+
+        if (!newYieldQty || newYieldQty <= 0) {
+            alert('Yield Quantity must be a positive number.');
+            return;
+        }
+
+        const recipeToUpdate = savedRecipes[recipeIndex];
+        const totalRecipeCost = recipeToUpdate.items.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
+        const newCostPerYieldUnit = totalRecipeCost / newYieldQty;
+
+        // 1. Update the (MAN) product's main entry in importedProducts
+        const productIndex = importedProducts.findIndex(p => p.plu.toString() === masterPlu.toString());
+        if (productIndex > -1) {
+            importedProducts[productIndex].cost = newCostPerYieldUnit;
+            importedProducts[productIndex].uom = newYieldUom;
+            importedProducts[productIndex].yieldQty = newYieldQty; // Keep original yield info consistent too
+            importedProducts[productIndex].yieldUom = newYieldUom;
+        }
+
+        // 2. Update the master data within the saved recipe itself
+        recipeToUpdate.master.yieldQty = newYieldQty;
+        recipeToUpdate.master.yieldUom = newYieldUom;
+
+        // 3. --- CASCADING UPDATE ---
+        // Find any other saved recipes that use this product as an ingredient and update their cost
+        savedRecipes.forEach(recipe => {
+            recipe.items.forEach(item => {
+                if (item.plu.toString() === masterPlu.toString()) {
+                    item.cost = newCostPerYieldUnit;
+                    item.uom = newYieldUom; // Also update UOM in case it changed
+                }
+            });
+        });
+
+        // 4. Save state and re-render all relevant UI components
+        saveState();
+        renderYieldEditor();
+        renderSavedRecipes();
+        setupLibraryTabs(); // This refreshes the ingredient library with the new cost
+
+        alert(`"${recipeToUpdate.master.name}" yield updated. All related costs have been recalculated.`);
+    }
+
+    // --- Global Actions ---
+    function clearAllData(askConfirm = true) {
+        if (askConfirm) {
+            if (!confirm("Are you sure you want to clear all imported products and saved recipes? This action cannot be undone.")) {
+                return;
+            }
+        }
+        importedProducts = [];
+        savedRecipes = [];
+        
+        fileNameDisplay.textContent = '';
+        excelFileInput.value = "";
+        
+        clearCurrentRecipeBuilder();
+        setupLibraryTabs();
+        renderSavedRecipes();
+        renderYieldEditor();
+        localStorage.removeItem('recipeBuilderState');
+        
+        masterProductList.innerHTML = '';
+        masterProductInput.placeholder = "-- Import products first --";
+        menuCategoryFilter.innerHTML = '';
+    }
+
+    // --- Export Logic ---
+    function exportAllRecipes() {
+        if (savedRecipes.length === 0) {
+            alert('There are no saved recipes to export.');
+            return;
+        }
+
+        if (!confirm("Are you sure you have completed all recipes? This will export the data and clear the application.")) {
+            return;
+        }
+
+        let recipeExportData = [];
+        let yieldExportData = [];
+
+        savedRecipes.forEach(recipe => {
+            // Populate the recipe data tab
+            const recipeRows = recipe.items.map(item => ({
+                'Master Product PLU': recipe.master.plu,
+                'Product Type': recipe.master.name.toLowerCase().includes('(man)') ? 'Preparation' : 'Composite',
+                'Master Product Name': recipe.master.name,
+                'Recipe Product PLU': item.plu,
+                'Recipe Product Name': item.name,
+                'Unit of Measure': item.uom,
+                'Quantity': item.quantity
+            }));
+            recipeExportData = recipeExportData.concat(recipeRows);
+
+            // Populate the yield data tab if it's a manufactured product
+            if (recipe.master.name.toLowerCase().includes('(man)')) {
+                yieldExportData.push({
+                    'Master Product PLU': recipe.master.plu,
+                    'Master Product Name': recipe.master.name,
+                    'Yield Quantity': recipe.master.yieldQty || '',
+                    'Yield UOM': recipe.master.yieldUom || ''
+                });
+            }
+        });
+
+        const wb = XLSX.utils.book_new();
+
+        // Create and append the Recipes sheet
+        const recipe_ws = XLSX.utils.json_to_sheet(recipeExportData);
+        XLSX.utils.book_append_sheet(wb, recipe_ws, "Recipes");
+
+        // Create and append the Yields sheet only if there is data for it
+        if (yieldExportData.length > 0) {
+            const yield_ws = XLSX.utils.json_to_sheet(yieldExportData);
+            XLSX.utils.book_append_sheet(wb, yield_ws, "Yields");
+        }
+        
+        XLSX.writeFile(wb, `all_recipes_export.xlsx`);
+        
+        clearAllData(false);
+    }
+
+</script>
+</body>
+</html>
+
