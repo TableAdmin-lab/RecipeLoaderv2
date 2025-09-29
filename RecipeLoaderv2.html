@@ -417,10 +417,6 @@
         font-size: 18px;
     }
 
-    td input.input-error {
-        border-color: var(--yoco-red);
-    }
-
     .recipe-summary {
         margin-top: 20px;
         padding: 20px;
@@ -671,6 +667,13 @@
       gap: 0.5rem;
       box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
     }
+    .btn-primary {
+      background-color: var(--yoco-primary);
+      color: white;
+    }
+    .btn-primary:hover:not(:disabled) {
+      background-color: var(--yoco-primary-hover);
+    }
     .btn-secondary {
       background-color: var(--yoco-surface);
       color: var(--yoco-text-primary);
@@ -686,15 +689,134 @@
     #yieldFieldsContainer .action-btn:hover:not(:disabled) {
         background-color: var(--yoco-primary);
     }
+    
+    /* --- Tutorial Styles --- */
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    }
+    .modal-backdrop.show {
+        display: flex;
+    }
+    .modal-content {
+        background-color: var(--yoco-surface);
+        padding: 2rem;
+        border-radius: 0.75rem;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        border: 1px solid var(--yoco-border);
+        text-align: center;
+    }
+     .modal-content h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: var(--yoco-text-primary);
+     }
+     .modal-content p {
+        color: var(--yoco-text-secondary);
+        margin-bottom: 2rem;
+     }
+     .modal-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+     }
 
+    .tutorial-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 9998;
+        display: none;
+    }
+    .tutorial-overlay-part {
+        position: fixed;
+        background-color: rgba(0, 0, 0, 0.85);
+        transition: all 0.4s ease-in-out;
+    }
+    .highlight-element {
+        position: relative;
+        z-index: 9999;
+        border-radius: 8px;
+        transition: box-shadow 0.3s ease-in-out;
+        box-shadow: 0 0 15px 5px rgba(0, 163, 255, 0.7);
+        animation: pulse-glow 2s infinite ease-in-out;
+    }
+    .tutorial-popover {
+        position: fixed; 
+        background-color: var(--yoco-surface);
+        color: #FFFFFF;
+        padding: 0;
+        border-radius: 0.8rem;
+        border: 2px solid var(--yoco-primary);
+        z-index: 10001;
+        width: 90%;
+        max-width: 380px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.7), 0 0 30px rgba(0, 163, 255, 0.5);
+        animation: fadeInPopover 0.4s ease-out forwards;
+        display: none;
+    }
+    .tutorial-popover-header {
+        background-color: rgba(0, 163, 255, 0.1);
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+        border-bottom: 1px solid var(--yoco-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--yoco-primary);
+    }
+    .tutorial-popover-content {
+        padding: 1.5rem;
+        font-size: 1.05rem;
+        line-height: 1.6;
+    }
+    .tutorial-popover-content b {
+        color: var(--yoco-primary);
+        font-weight: 600;
+    }
+    .tutorial-popover-nav {
+        padding: 1rem 1.5rem;
+        background-color: rgba(0,0,0,0.2);
+        border-top: 1px solid var(--yoco-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .tutorial-popover::after {
+        content: '';
+        position: absolute;
+        border-width: 10px;
+        border-style: solid;
+        border-color: transparent;
+    }
+    .tutorial-popover.arrow-top::after { bottom: 100%; left: 50%; transform: translateX(-50%); border-bottom-color: var(--yoco-primary); }
+    .tutorial-popover.arrow-bottom::after { top: 100%; left: 50%; transform: translateX(-50%); border-top-color: var(--yoco-primary); }
+    .tutorial-popover.arrow-left::after { right: 100%; top: 50%; transform: translateY(-50%); border-right-color: var(--yoco-primary); }
+    .tutorial-popover.arrow-right::after { left: 100%; top: 50%; transform: translateY(-50%); border-left-color: var(--yoco-primary); }
+    
+    @keyframes fadeInPopover { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 15px 5px rgba(0, 163, 255, 0.7); } 50% { box-shadow: 0 0 25px 10px rgba(0, 163, 255, 0.7); } }
 
   </style>
 </head>
 <body>
 
-<header class="main-header">
+<header id="tutorial-header" class="main-header">
     <div class="flex items-center gap-3">
-        <a href="https://drive.google.com/file/d/1S6otC-OQOKkcr0Rb0HeyhqZ-QcfZ1HRj/view?usp=drive_link" target="_blank" class="btn btn-secondary btn-icon tooltip" style="padding: 0.75rem;" data-tooltip="View How To Guide">
+        <a id="tutorial-how-to-guide" href="https://drive.google.com/file/d/15oC4BCyxpCflHFOJ3mifQIrzZgbzlPwq/view?usp=sharing" target="_blank" class="btn btn-secondary btn-icon tooltip" style="padding: 0.75rem;" data-tooltip="View How To Guide">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
         </a>
         <div class="tooltip-container">
@@ -703,7 +825,7 @@
             <div class="tooltip-text">An application to build and manage product recipes from an imported list.</div>
         </div>
     </div>
-    <div class="header-actions">
+    <div class="header-actions" id="tutorial-actions">
         <button class="action-btn export-btn" id="exportAllBtnHeader" title="Export all saved recipes to an Excel file and clear all data.">Export All Recipes</button>
         <button class="action-btn clear-btn" id="clearAllBtn" title="Clear all imported products and saved recipes from the application.">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path d="M3 6v18h18v-18h-18zm5 14c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm5 0c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm5 0c0 .552-.448 1-1 1s-1-.448-1-1v-10c0-.552.448-1 1-1s1 .448 1 1v10zm4-18h-20v-2h6v-1.5c0-.827.673-1.5 1.5-1.5h5c.825 0 1.5.671 1.5 1.5v1.5h6v2z"/></svg>
@@ -714,7 +836,7 @@
 <div class="container">
     <!-- Left Panel: Import and Library -->
     <div class="left-panel">
-        <div class="panel import-section">
+        <div id="tutorial-import" class="panel import-section">
             <div class="tooltip-container">
                 <label for="excelFile">Import Product Sheet</label>
                 <span class="tooltip-trigger">?</span>
@@ -724,7 +846,7 @@
             <label for="excelFile" class="file-upload-btn" title="Import an Excel file (.xlsx, .xls, .csv) with your product list.">Choose File</label>
             <p id="fileName"></p>
         </div>
-        <div class="panel library-section">
+        <div id="tutorial-library" class="panel library-section">
              <div class="panel-header">
                 <div class="tooltip-container">
                     <h2>Ingredient Library</h2>
@@ -761,7 +883,7 @@
                     </div>
                 </div>
 
-                <div class="master-product-form">
+                <div id="tutorial-master-product" class="master-product-form">
                     <div class="form-group">
                         <label for="menuCategoryFilter">Filter by Menu Category</label>
                         <select id="menuCategoryFilter"></select>
@@ -791,7 +913,7 @@
                     </div>
                 </div>
 
-                <div class="recipe-details">
+                <div class="recipe-details" id="tutorial-recipe-table">
                     <div class="recipe-table-container">
                         <table id="recipeTable">
                             <thead>
@@ -845,7 +967,7 @@
         </div>
 
         <!-- Bottom Right Panel: Saved Recipes -->
-        <div class="panel saved-recipes-panel">
+        <div class="panel saved-recipes-panel" id="tutorial-saved-recipes">
              <div class="panel-header">
                 <div class="tooltip-container">
                     <h2>Saved Recipes</h2>
@@ -863,6 +985,40 @@
         </div>
     </div>
 </div>
+
+<!-- Tutorial Elements -->
+<div id="tutorial-prompt-modal" class="modal-backdrop">
+  <div class="modal-content">
+    <h3>Quick Tutorial</h3>
+    <p>Would you like a quick tour of the main features?</p>
+    <div class="modal-buttons">
+      <button id="start-tutorial-btn" class="btn btn-primary">Yes, please</button>
+      <button id="skip-tutorial-btn" class="btn btn-secondary">No, thanks</button>
+    </div>
+  </div>
+</div>
+
+<div id="tutorial-overlay" class="tutorial-overlay">
+    <div class="tutorial-overlay-part" id="tutorial-overlay-top"></div>
+    <div class="tutorial-overlay-part" id="tutorial-overlay-bottom"></div>
+    <div class="tutorial-overlay-part" id="tutorial-overlay-left"></div>
+    <div class="tutorial-overlay-part" id="tutorial-overlay-right"></div>
+</div>
+<div id="tutorial-popover" class="tutorial-popover">
+    <div class="tutorial-popover-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+        <span>Quick Guide</span>
+    </div>
+    <div id="tutorial-popover-content" class="tutorial-popover-content"></div>
+    <div class="tutorial-popover-nav">
+        <span id="tutorial-step-counter" class="text-sm"></span>
+        <div>
+            <button id="tutorial-prev-btn" class="btn btn-secondary">Prev</button>
+            <button id="tutorial-next-btn" class="btn btn-primary">Next</button>
+        </div>
+    </div>
+</div>
+
 
 <script>
     // --- State Management ---
@@ -902,7 +1058,12 @@
     const editYieldBtn = document.getElementById('editYieldBtn');
     
     // --- Event Listeners ---
-    window.addEventListener('DOMContentLoaded', loadState);
+    window.addEventListener('DOMContentLoaded', () => {
+        loadState();
+        if (localStorage.getItem('recipeLoaderTutorialShown') !== 'true') {
+            document.getElementById('tutorial-prompt-modal').classList.add('show');
+        }
+    });
     excelFileInput.addEventListener('change', handleFileUpload);
     saveRecipeBtn.addEventListener('click', saveCurrentRecipe);
     exportAllBtnHeader.addEventListener('click', exportAllRecipes);
@@ -1107,15 +1268,14 @@
         libraryTabs.innerHTML = '';
         tabContents.innerHTML = '';
 
-        const currentRecipePlus = new Set(recipeItems.map(item => item.plu));
-
         const availableIngredients = importedProducts.filter(p => {
+            // Trim and convert to lower case for a case-insensitive check.
             const cleanCategory = (p.category || '').trim().toLowerCase();
-            const isIngredientCategory = cleanCategory.includes('raw material') || cleanCategory.includes('manufactured');
-            const notInCurrentRecipe = !currentRecipePlus.has(p.plu);
-            return isIngredientCategory && notInCurrentRecipe;
+            
+            // An ingredient is any product that has an inventory category containing "raw material" or "manufactured".
+            // Using .includes() is more flexible than .endsWith()
+            return cleanCategory.includes('raw material') || cleanCategory.includes('manufactured');
         });
-
 
         if (availableIngredients.length === 0) {
             if (importedProducts.length > 0) {
@@ -1288,30 +1448,12 @@
         recipeItems.push({ ...product, quantity: '' });
         renderRecipeTable();
         updateSummary();
-        setupLibraryTabs(); // Refresh the library to hide the added item
     }
     
-    function updateRecipeQuantity(plu, inputElement) {
-        const quantityValue = inputElement.value;
+    function updateRecipeQuantity(plu, quantity) {
         const item = recipeItems.find(i => i.plu.toString() === plu.toString());
-        
-        if (item) {
-            // Update the data model
-            item.quantity = quantityValue; // Keep as string here, parse when calculating
-            
-            // Update the specific row's total cost in the DOM
-            const row = inputElement.closest('tr');
-            const totalCostCell = row.cells[5]; // 6th cell
-            const itemTotalCost = item.cost * (parseFloat(quantityValue) || 0);
-            totalCostCell.textContent = `R${itemTotalCost.toFixed(2)}`;
-
-            // If the new quantity is valid, remove the error class
-            if (parseFloat(quantityValue) > 0) {
-                inputElement.classList.remove('input-error');
-            }
-        }
-        
-        // Only update the summary, don't re-render the whole table
+        if (item) item.quantity = parseFloat(quantity) || 0;
+        renderRecipeTable();
         updateSummary();
     }
 
@@ -1319,21 +1461,19 @@
         recipeItems = recipeItems.filter(item => item.plu.toString() !== plu.toString());
         renderRecipeTable();
         updateSummary();
-        setupLibraryTabs(); // Refresh the library to show the removed item again
     }
 
     function renderRecipeTable() {
         recipeTableBody.innerHTML = '';
         recipeItems.forEach(item => {
             const row = document.createElement('tr');
-            row.dataset.plu = item.plu;
-            const itemTotalCost = item.cost * (parseFloat(item.quantity) || 0);
+            const itemTotalCost = item.cost * item.quantity;
             row.innerHTML = `
                 <td>${item.plu}</td>
                 <td>${item.name}</td>
                 <td>${item.uom}</td>
                 <td>R${item.cost.toFixed(2)}</td>
-                <td><input type="number" value="${item.quantity}" placeholder="0.000" min="0" step="0.001" onchange="updateRecipeQuantity('${item.plu}', this)"></td>
+                <td><input type="number" value="${item.quantity}" placeholder="0.000" min="0" step="0.001" onchange="updateRecipeQuantity('${item.plu}', this.value)"></td>
                 <td>R${itemTotalCost.toFixed(2)}</td>
                 <td><button class="remove-btn" title="Remove this ingredient from the current recipe." onclick="removeRecipeItem('${item.plu}')">&times;</button></td>
             `;
@@ -1343,7 +1483,7 @@
 
     function updateSummary() {
         // 1. Calculate and display total cost
-        const total = recipeItems.reduce((sum, item) => sum + (item.cost * (parseFloat(item.quantity) || 0)), 0);
+        const total = recipeItems.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
         totalCostDisplay.textContent = `R${total.toFixed(2)}`;
 
         // 2. Display selling price and GP% if a master product is selected
@@ -1391,28 +1531,11 @@
             return;
         }
         
-        // --- NEW VALIDATION LOGIC ---
-        // 1. Clear previous errors
-        document.querySelectorAll('#recipeTable input[type="number"]').forEach(input => input.classList.remove('input-error'));
-
-        // 2. Find all items with invalid quantities
-        const invalidItems = recipeItems.filter(item => !item.quantity || parseFloat(item.quantity) <= 0);
-
-        // 3. If there are invalid items, highlight them and alert
-        if (invalidItems.length > 0) {
-            invalidItems.forEach(item => {
-                const row = recipeTableBody.querySelector(`tr[data-plu='${item.plu}']`);
-                if (row) {
-                    const input = row.querySelector('input[type="number"]');
-                    if (input) {
-                        input.classList.add('input-error');
-                    }
-                }
-            });
-            alert('Please provide a quantity greater than 0 for all highlighted ingredients.');
-            return; // Stop the save process
+        const itemWithNoQuantity = recipeItems.find(item => !item.quantity || parseFloat(item.quantity) <= 0);
+        if (itemWithNoQuantity) {
+            alert(`Please provide a quantity greater than 0 for all ingredients. The item "${itemWithNoQuantity.name}" needs a quantity.`);
+            return;
         }
-        // --- END NEW LOGIC ---
 
         const isManProduct = selectedMasterProduct.name.toLowerCase().startsWith('(man)');
         const yieldQty = parseFloat(yieldQtyInput.value);
@@ -1425,7 +1548,7 @@
         // Remember the category before saving
         const lastSelectedCategory = menuCategoryFilter.value;
 
-        const totalCost = recipeItems.reduce((sum, item) => sum + (item.cost * (parseFloat(item.quantity) || 0)), 0);
+        const totalCost = recipeItems.reduce((sum, item) => sum + (item.cost * item.quantity), 0);
         
         const masterDataForRecipe = {
             ...selectedMasterProduct
@@ -1665,7 +1788,6 @@
         // Update UI
         renderRecipeTable();
         updateSummary();
-        setupLibraryTabs(); // Refresh library to hide items now in the builder
         
         isEditingRecipe = true;
         saveRecipeBtn.textContent = 'Update Recipe';
@@ -1892,8 +2014,206 @@
         
         clearAllData(false);
     }
+    
+    // --- TUTORIAL LOGIC ---
+    const tutorialPromptModal = document.getElementById('tutorial-prompt-modal');
+    const startTutorialBtn = document.getElementById('start-tutorial-btn');
+    const skipTutorialBtn = document.getElementById('skip-tutorial-btn');
+    
+    startTutorialBtn.addEventListener('click', () => {
+        tutorialPromptModal.classList.remove('show');
+        localStorage.setItem('recipeLoaderTutorialShown', 'true');
+        startTutorial();
+    });
+
+    skipTutorialBtn.addEventListener('click', () => {
+        tutorialPromptModal.classList.remove('show');
+        localStorage.setItem('recipeLoaderTutorialShown', 'true');
+    });
+
+    const tutorialSteps = [
+        {
+            element: '#tutorial-how-to-guide',
+            content: '<b>Welcome!</b> For a detailed guide, you can always click this document icon to open the "How To" guide in a new tab.',
+            position: 'right'
+        },
+        {
+            element: '#tutorial-import',
+            content: 'First, click <b>"Choose File"</b> to import your Product Excel sheet. This will populate your ingredient library.',
+            position: 'bottom'
+        },
+        {
+            element: '#tutorial-library',
+            content: 'Your available ingredients will appear here. Click on an ingredient to add it to your current recipe.',
+            position: 'right'
+        },
+        {
+            element: '#tutorial-master-product',
+            content: 'Next, select the <b>Master Product</b> you are creating a recipe for from this dropdown list.',
+            position: 'bottom'
+        },
+        {
+            element: '#tutorial-recipe-table',
+            content: 'Added ingredients appear in this table. You must enter a <b>Quantity</b> for each one.',
+            position: 'top'
+        },
+        {
+            element: '#saveRecipeBtn',
+            content: 'Once your recipe is complete, click <b>Save Recipe</b>. It will then appear in the "Saved Recipes" list below.',
+            position: 'top'
+        },
+        {
+            element: '#tutorial-saved-recipes',
+            content: 'All your saved recipes are listed here. You can <b>edit, copy, or delete</b> them using the action buttons.',
+            position: 'top'
+        },
+        {
+            element: '#tutorial-actions',
+            content: 'Finally, use these buttons to <b>Export All Recipes</b> to an Excel file or to <b>Clear All Data</b> from the app.',
+            position: 'left'
+        }
+    ];
+
+    let currentTutorialStep = 0;
+    const tutorialOverlay = document.getElementById('tutorial-overlay');
+    const tutorialPopover = document.getElementById('tutorial-popover');
+    const popoverContent = document.getElementById('tutorial-popover-content');
+    const stepCounter = document.getElementById('tutorial-step-counter');
+    const prevBtn = document.getElementById('tutorial-prev-btn');
+    const nextBtn = document.getElementById('tutorial-next-btn');
+    let highlightedElement = null;
+
+    function startTutorial() {
+        currentTutorialStep = 0;
+        tutorialOverlay.style.display = 'block';
+        showTutorialStep(currentTutorialStep);
+    }
+
+    function endTutorial() {
+        tutorialOverlay.style.display = 'none';
+        document.querySelectorAll('.tutorial-overlay-part').forEach(part => {
+            part.style.width = '0';
+            part.style.height = '0';
+        });
+        tutorialPopover.style.display = 'none';
+        if (highlightedElement) {
+            highlightedElement.classList.remove('highlight-element');
+            highlightedElement = null;
+        }
+    }
+
+    function showTutorialStep(index) {
+        if (highlightedElement) {
+            highlightedElement.classList.remove('highlight-element');
+        }
+
+        const step = tutorialSteps[index];
+        const targetElement = document.querySelector(step.element);
+
+        if (!targetElement) {
+            console.warn('Tutorial element not found:', step.element);
+            if (index < tutorialSteps.length - 1) {
+                showTutorialStep(index + 1);
+            } else {
+                endTutorial();
+            }
+            return;
+        }
+        
+        tutorialPopover.style.display = 'block';
+        highlightedElement = targetElement;
+        highlightedElement.classList.add('highlight-element');
+        
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+
+        popoverContent.innerHTML = step.content;
+        stepCounter.textContent = `Step ${index + 1} of ${tutorialSteps.length}`;
+        
+        setTimeout(() => {
+            positionPopover(targetElement, step.position);
+            positionSpotlight(targetElement);
+        }, 300);
+
+        prevBtn.disabled = index === 0;
+        nextBtn.textContent = index === tutorialSteps.length - 1 ? 'Finish' : 'Next';
+    }
+
+    function positionSpotlight(target) {
+        const targetRect = target.getBoundingClientRect();
+        document.getElementById('tutorial-overlay-top').style.height = `${targetRect.top}px`;
+        document.getElementById('tutorial-overlay-top').style.width = '100vw';
+        
+        document.getElementById('tutorial-overlay-bottom').style.top = `${targetRect.bottom}px`;
+        document.getElementById('tutorial-overlay-bottom').style.height = `calc(100vh - ${targetRect.bottom}px)`;
+        document.getElementById('tutorial-overlay-bottom').style.width = '100vw';
+
+        document.getElementById('tutorial-overlay-left').style.top = `${targetRect.top}px`;
+        document.getElementById('tutorial-overlay-left').style.height = `${targetRect.height}px`;
+        document.getElementById('tutorial-overlay-left').style.width = `${targetRect.left}px`;
+
+        document.getElementById('tutorial-overlay-right').style.top = `${targetRect.top}px`;
+        document.getElementById('tutorial-overlay-right').style.height = `${targetRect.height}px`;
+        document.getElementById('tutorial-overlay-right').style.left = `${targetRect.right}px`;
+        document.getElementById('tutorial-overlay-right').style.width = `calc(100vw - ${targetRect.right}px)`;
+    }
+
+    function positionPopover(target, position) {
+        const targetRect = target.getBoundingClientRect();
+        const popoverNode = tutorialPopover;
+        
+        popoverNode.style.visibility = 'hidden';
+        const popoverRect = popoverNode.getBoundingClientRect();
+        popoverNode.style.visibility = '';
+
+        const spacing = 15;
+        popoverNode.className = 'tutorial-popover'; // Reset classes
+        let top, left;
+
+        switch (position) {
+            case 'top':
+                top = targetRect.top - popoverRect.height - spacing;
+                left = targetRect.left + (targetRect.width / 2) - (popoverRect.width / 2);
+                break;
+            case 'bottom':
+                top = targetRect.bottom + spacing;
+                left = targetRect.left + (targetRect.width / 2) - (popoverRect.width / 2);
+                break;
+            case 'left':
+                left = targetRect.left - popoverRect.width - spacing;
+                top = targetRect.top + (targetRect.height / 2) - (popoverRect.height / 2);
+                break;
+            case 'right':
+                left = targetRect.right + spacing;
+                top = targetRect.top + (targetRect.height / 2) - (popoverRect.height / 2);
+                break;
+        }
+        
+        if (left < spacing) left = spacing;
+        if ((left + popoverRect.width) > window.innerWidth - spacing) left = window.innerWidth - popoverRect.width - spacing;
+        if (top < spacing) top = spacing;
+        if ((top + popoverRect.height) > window.innerHeight - spacing) top = window.innerHeight - popoverRect.height - spacing;
+
+        popoverNode.style.top = `${top}px`;
+        popoverNode.style.left = `${left}px`;
+        popoverNode.classList.add(`arrow-${position}`);
+    }
+
+    prevBtn.addEventListener('click', () => {
+        if (currentTutorialStep > 0) {
+            currentTutorialStep--;
+            showTutorialStep(currentTutorialStep);
+        }
+    });
+
+    nextBtn.addEventListener('click', () => {
+        if (currentTutorialStep < tutorialSteps.length - 1) {
+            currentTutorialStep++;
+            showTutorialStep(currentTutorialStep);
+        } else {
+            endTutorial();
+        }
+    });
 
 </script>
 </body>
 </html>
-
